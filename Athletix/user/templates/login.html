@@ -135,7 +135,7 @@
               />
             </div>
 
-            <div class="form-group">
+            {% comment %} <div class="form-group">
               <label>Role</label>
               <select id="role" required>
                 <option value="">Select Role</option>
@@ -143,7 +143,7 @@
                 <option value="coach">Coach</option>
                 <option value="medical">Medical Staff</option>
               </select>
-            </div>
+            </div> {% endcomment %}
 
             <button type="submit" class="btn">Login</button>
 
@@ -163,7 +163,7 @@
         .addEventListener("submit", function (e) {
           let email = document.getElementById("email").value;
           let password = document.getElementById("password").value;
-          let role = document.getElementById("role").value;
+          // let role = document.getElementById("role").value;
 
           if (email == "" || password == "" || role == "") {
             e.preventDefault();
