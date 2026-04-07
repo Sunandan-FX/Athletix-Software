@@ -2,7 +2,7 @@ from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, Permis
 from django.db import models
 from django.utils import timezone
 
-
+#this class manages users email and password properly
 class UserManager(BaseUserManager):
     def create_user(self, email, name, password=None, role='athlete', **extra_fields):
         if not email:
@@ -13,6 +13,7 @@ class UserManager(BaseUserManager):
         user.save(using=self._db)
         return user
 
+# it is related to django admin
     def create_superuser(self, email, name, password=None, **extra_fields):
         extra_fields.setdefault('is_staff', True)
         extra_fields.setdefault('is_superuser', True)
@@ -51,7 +52,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     class Meta:
         db_table = 'user_table'
 
-
+# Profile of admins
 class AthleteProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='athlete_profile')
     sport_type = models.CharField(max_length=100, blank=True)
