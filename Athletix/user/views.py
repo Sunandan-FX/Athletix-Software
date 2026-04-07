@@ -79,7 +79,7 @@ def login_view(request):
 
     return render(request, 'user/login.html', {'form': form})
 
-
+# working for logout components properly
 @login_required
 def logout_view(request):
     logout(request)
