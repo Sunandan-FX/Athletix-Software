@@ -1,7 +1,7 @@
 from django.contrib import admin
 from .models import Sport, CoachRequest, AthleteCoach, DailyRoutine, AthleteSport
 
-
+# admin has been created for sport,coach,Athlete,daily routine,skill level
 @admin.register(Sport)
 class SportAdmin(admin.ModelAdmin):
     list_display = ('name', 'description')
