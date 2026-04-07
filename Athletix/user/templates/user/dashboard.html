@@ -3,6 +3,7 @@
 {% block title %}Dashboard - Athletix{% endblock %}
 
 {% block content %}
+<!--  all design has been updated-->
 <div class="dashboard-container" style="max-width: 1400px;">
     <div class="dashboard-header">
         <div class="user-info">
@@ -12,7 +13,7 @@
                 &nbsp;&bull;&nbsp; {{ user.email }}
             </p>
         </div>
-        <a href="{% url 'logout' %}" class="btn-logout">🚪 Logout</a>
+        <a href="{% url 'logout' %}" class="btn-logout"> Logout</a>
     </div>
 
     {% if messages %}
