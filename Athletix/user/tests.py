@@ -7,7 +7,7 @@ from .forms import SignUpForm, LoginForm, ForgotPasswordForm, ProfileEditForm
 
 
 # ============================================================================
-# MODEL TESTS (Tests 1-13)
+#                       MODEL TESTS (Tests 1-13)
 # ============================================================================
 
 class UserModelTests(TestCase):
