@@ -1,0 +1,96 @@
+{% extends 'user/base.html' %}
+
+{% block title %}Player Dashboard - Athletix{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <div class="dashboard-header">
+        <div class="user-info">
+            <h1>Welcome, {{ user.first_name }}! 🏃</h1>
+            <p>Athlete Dashboard</p>
+        </div>
+        <div class="header-actions">
+            <a href="{% url 'player:profile' %}" class="btn-logout">My Profile</a>
+            <a href="{% url 'logout' %}" class="btn-logout">Logout</a>
+        </div>
+    </div>
+
+    <div class="dashboard-body">
+        {% if messages %}
+        <div class="messages-container" style="margin-bottom: 20px;">
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">
+                <span>{{ message }}</span>
+                <button class="alert-close">&times;</button>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- Quick Stats -->
+        <div class="info-grid">
+            <div class="info-card">
+                <div class="card-icon">🏆</div>
+                <h3>My Sports</h3>
+                <p>{{ selected_sports.count }}</p>
+                <a href="{% url 'player:select_sports' %}" style="font-size: 12px; color: var(--primary);">Manage Sports</a>
+            </div>
+            <div class="info-card">
+                <div class="card-icon">👨‍🏫</div>
+                <h3>Active Coaches</h3>
+                <p>{{ active_coaches.count }}</p>
+                <a href="{% url 'player:my_coaches' %}" style="font-size: 12px; color: var(--primary);">View Coaches</a>
+            </div>
+            <div class="info-card">
+                <div class="card-icon">⏳</div>
+                <h3>Pending Requests</h3>
+                <p>{{ pending_requests.count }}</p>
+                <a href="{% url 'player:find_coaches' %}" style="font-size: 12px; color: var(--primary);">Find Coaches</a>
+            </div>
+            <div class="info-card">
+                <div class="card-icon">📋</div>
+                <h3>Today's Routines</h3>
+                <p>{{ todays_routines.count }}</p>
+                <a href="{% url 'player:daily_routine' %}" style="font-size: 12px; color: var(--primary);">View All</a>
+            </div>
+        </div>
+
+        <!-- Today's Routines -->
+        {% if todays_routines %}
+        <div style="margin-top: 30px;">
+            <h2 style="margin-bottom: 15px; color: var(--gray-900);">📅 Today's Training Schedule</h2>
+            <div class="routine-list">
+                {% for routine in todays_routines %}
+                <div class="routine-card" style="background: var(--gray-100); padding: 20px; border-radius: var(--radius); margin-bottom: 15px; border-left: 4px solid var(--primary);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <h3 style="color: var(--gray-900);">{{ routine.title }}</h3>
+                        <span style="background: var(--primary); color: white; padding: 4px 12px; border-radius: 20px; font-size: 12px;">
+                            {{ routine.start_time|time:"H:i" }} - {{ routine.end_time|time:"H:i" }}
+                        </span>
+                    </div>
+                    <p style="color: var(--gray-600); font-size: 14px;">{{ routine.sport.name }} with {{ routine.coach.user.first_name }}</p>
+                    <a href="{% url 'player:routine_detail' routine.id %}" style="color: var(--primary); font-size: 13px;">View Details →</a>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Quick Actions -->
+        <div style="margin-top: 30px;">
+            <h2 style="margin-bottom: 15px; color: var(--gray-900);">⚡ Quick Actions</h2>
+            <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+                <a href="{% url 'player:select_sports' %}" class="btn btn-primary" style="display: inline-block; width: auto; padding: 12px 24px;">
+                    🎯 Select Sports
+                </a>
+                <a href="{% url 'player:find_coaches' %}" class="btn btn-primary" style="display: inline-block; width: auto; padding: 12px 24px; background: var(--secondary);">
+                    🔍 Find a Coach
+                </a>
+                <a href="{% url 'player:daily_routine' %}" class="btn btn-primary" style="display: inline-block; width: auto; padding: 12px 24px; background: var(--accent);">
+                    📋 View Routines
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

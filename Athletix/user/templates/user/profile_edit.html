@@ -1,0 +1,123 @@
+{% extends 'user/base.html' %}
+
+{% block title %}Edit Profile - Athletix{% endblock %}
+
+{% block content %}
+<div class="auth-container" style="max-width: 550px;">
+    <div class="auth-header">
+        <div class="logo">ATHLETI<span>X</span></div>
+        <div class="subtitle">Edit Your Profile</div>
+    </div>
+
+    {% if messages %}
+    <div class="messages-container" style="padding-top: 20px;">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }}">
+            <span>{{ message }}</span>
+            <button class="alert-close">&times;</button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="auth-body">
+        <div class="current-photo" style="text-align: center; margin-bottom: 25px;">
+            {% if request.user.profile_photo %}
+            <img src="{{ request.user.profile_photo.url }}" alt="Profile Photo" class="edit-avatar-img">
+            {% else %}
+            <div class="edit-avatar-placeholder">{{ request.user.first_name|slice:":1"|upper }}</div>
+            {% endif %}
+        </div>
+
+        <form method="POST" enctype="multipart/form-data" novalidate>
+            {% csrf_token %}
+
+            <div class="form-group">
+                <label for="profile_photo">Profile Photo</label>
+                {{ form.profile_photo }}
+                {% if form.profile_photo.errors %}
+                <ul class="error-list">{% for error in form.profile_photo.errors %}<li>{{ error }}</li>{% endfor %}</ul>
+                {% endif %}
+                <small style="color: #5f6368; font-size: 12px;">Accepted formats: JPG, PNG, GIF. Max 5MB.</small>
+            </div>
+
+            <div class="form-group">
+                <label for="name">Full Name</label>
+                {{ form.name }}
+                {% if form.name.errors %}
+                <ul class="error-list">{% for error in form.name.errors %}<li>{{ error }}</li>{% endfor %}</ul>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="email">Email Address</label>
+                {{ form.email }}
+                {% if form.email.errors %}
+                <ul class="error-list">{% for error in form.email.errors %}<li>{{ error }}</li>{% endfor %}</ul>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="phone">Phone Number</label>
+                {{ form.phone }}
+                {% if form.phone.errors %}
+                <ul class="error-list">{% for error in form.phone.errors %}<li>{{ error }}</li>{% endfor %}</ul>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="address">Address</label>
+                {{ form.address }}
+                {% if form.address.errors %}
+                <ul class="error-list">{% for error in form.address.errors %}<li>{{ error }}</li>{% endfor %}</ul>
+                {% endif %}
+            </div>
+
+            {% if form.non_field_errors %}
+            <div class="alert alert-error" style="margin-bottom: 15px;">
+                {% for error in form.non_field_errors %}<span>{{ error }}</span>{% endfor %}
+            </div>
+            {% endif %}
+
+            <button type="submit" class="btn btn-primary">Save Changes</button>
+        </form>
+    </div>
+
+    <div class="auth-footer">
+        <a href="{% url 'profile' %}">← Back to Profile</a>
+        <span class="separator">|</span>
+        <a href="{% url 'home' %}">Home</a>
+    </div>
+</div>
+
+<style>
+    .edit-avatar-img {
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 4px solid #1a73e8;
+        box-shadow: 0 4px 15px rgba(26, 115, 232, 0.3);
+    }
+    
+    .edit-avatar-placeholder {
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #ffd700, #ffaa00);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 40px;
+        font-weight: 700;
+        color: #202124;
+        border: 4px solid #1a73e8;
+        box-shadow: 0 4px 15px rgba(26, 115, 232, 0.3);
+    }
+    
+    textarea.form-input {
+        resize: vertical;
+        min-height: 80px;
+    }
+</style>
+{% endblock %}
