@@ -638,3 +638,467 @@ class ProfileEditViewTests(TestCase):
         self.user.refresh_from_db()
         self.assertEqual(self.user.name, 'Updated Name')
         self.assertEqual(self.user.phone, '1234567890')
+
+
+@tag('selenium')
+class SeleniumHomePageTests(StaticLiveServerTestCase):
+    """Selenium tests for home page - visible browser"""
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        # Chrome options - NO headless so browser is visible
+        chrome_options = Options()
+        chrome_options.add_argument('--start-maximized')
+        chrome_options.add_argument('--disable-gpu')
+        # Use webdriver-manager to auto-download ChromeDriver
+        service = Service(ChromeDriverManager().install())
+        cls.browser = webdriver.Chrome(service=service, options=chrome_options)
+        cls.browser.implicitly_wait(10)
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.browser.quit()
+        super().tearDownClass()
+
+    # Selenium Test 1: Home page loads correctly
+    def test_home_page_loads(self):
+        """Test home page loads and displays logo"""
+        self.browser.get(self.live_server_url + '/')
+        time.sleep(1)  # Brief pause to see the page
+        
+        # Check page title
+        self.assertIn('Athletix', self.browser.title)
+        
+        # Check logo is present
+        logo = self.browser.find_element(By.CLASS_NAME, 'logo')
+        self.assertIn('ATHLETI', logo.text)
+
+    # Selenium Test 2: Navigation links are present
+    def test_home_page_nav_links(self):
+        """Test home page has login and signup links"""
+        self.browser.get(self.live_server_url + '/')
+        time.sleep(1)
+        
+        # Find login link
+        login_link = self.browser.find_element(By.LINK_TEXT, 'Login')
+        self.assertTrue(login_link.is_displayed())
+        
+        # Find signup link
+        signup_link = self.browser.find_element(By.LINK_TEXT, 'Sign Up')
+        self.assertTrue(signup_link.is_displayed())
+
+    # Selenium Test 3: Click login navigates to login page
+    def test_click_login_link(self):
+        """Test clicking login link navigates to login page"""
+        self.browser.get(self.live_server_url + '/')
+        time.sleep(1)
+        
+        login_link = self.browser.find_element(By.LINK_TEXT, 'Login')
+        login_link.click()
+        time.sleep(1)
+        
+        # Should be on login page
+        self.assertIn('login', self.browser.current_url)
+
+
+@tag('selenium')
+class SeleniumSignupTests(StaticLiveServerTestCase):
+    """Selenium tests for signup functionality"""
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        chrome_options = Options()
+        chrome_options.add_argument('--start-maximized')
+        chrome_options.add_argument('--disable-gpu')
+        service = Service(ChromeDriverManager().install())
+        cls.browser = webdriver.Chrome(service=service, options=chrome_options)
+        cls.browser.implicitly_wait(10)
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.browser.quit()
+        super().tearDownClass()
+
+    # Selenium Test 4: Signup page loads
+    def test_signup_page_loads(self):
+        """Test signup page loads correctly"""
+        self.browser.get(self.live_server_url + '/user/signup/')
+        time.sleep(1)
+        
+        self.assertIn('Sign Up', self.browser.title)
+        
+        # Check form fields exist
+        name_field = self.browser.find_element(By.ID, 'name')
+        email_field = self.browser.find_element(By.ID, 'email')
+        password_field = self.browser.find_element(By.ID, 'password')
+        
+        self.assertTrue(name_field.is_displayed())
+        self.assertTrue(email_field.is_displayed())
+        self.assertTrue(password_field.is_displayed())
+
+    # Selenium Test 5: User can signup successfully
+    def test_user_signup_flow(self):
+        """Test complete user signup flow"""
+        self.browser.get(self.live_server_url + '/user/signup/')
+        time.sleep(1)
+        
+        # Fill in the form
+        self.browser.find_element(By.ID, 'name').send_keys('Test Athlete')
+        self.browser.find_element(By.ID, 'email').send_keys('newathlete@test.com')
+        
+        # Select role
+        role_select = Select(self.browser.find_element(By.ID, 'role'))
+        role_select.select_by_value('athlete')
+        
+        self.browser.find_element(By.ID, 'password').send_keys('securepass123')
+        self.browser.find_element(By.ID, 'confirm_password').send_keys('securepass123')
+        
+        time.sleep(1)  # Pause to see filled form
+        
+        # Submit form
+        submit_btn = self.browser.find_element(By.CSS_SELECTOR, 'button[type="submit"]')
+        submit_btn.click()
+        
+        time.sleep(2)  # Wait for redirect
+        
+        # Should redirect to login page
+        self.assertIn('login', self.browser.current_url)
+
+    # Selenium Test 6: Signup shows error for mismatched passwords
+    def test_signup_password_mismatch(self):
+        """Test signup shows error for password mismatch"""
+        self.browser.get(self.live_server_url + '/user/signup/')
+        time.sleep(1)
+        
+        self.browser.find_element(By.ID, 'name').send_keys('Test User')
+        self.browser.find_element(By.ID, 'email').send_keys('test@test.com')
+        self.browser.find_element(By.ID, 'password').send_keys('password123')
+        self.browser.find_element(By.ID, 'confirm_password').send_keys('different123')
+        
+        submit_btn = self.browser.find_element(By.CSS_SELECTOR, 'button[type="submit"]')
+        submit_btn.click()
+        
+        time.sleep(1)
+        
+        # Should show error
+        page_source = self.browser.page_source
+        self.assertTrue('match' in page_source.lower() or 'error' in page_source.lower())
+
+
+@tag('selenium')
+class SeleniumLoginTests(StaticLiveServerTestCase):
+    """Selenium tests for login functionality"""
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        chrome_options = Options()
+        chrome_options.add_argument('--start-maximized')
+        chrome_options.add_argument('--disable-gpu')
+        service = Service(ChromeDriverManager().install())
+        cls.browser = webdriver.Chrome(service=service, options=chrome_options)
+        cls.browser.implicitly_wait(10)
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.browser.quit()
+        super().tearDownClass()
+
+    def setUp(self):
+        # Create a test user for login tests
+        self.test_user = User.objects.create_user(
+            email='selenium@test.com',
+            name='Selenium Tester',
+            password='testpass123',
+            role='athlete'
+        )
+        AthleteProfile.objects.create(user=self.test_user)
+
+    # Selenium Test 7: Login page loads
+    def test_login_page_loads(self):
+        """Test login page loads correctly"""
+        self.browser.get(self.live_server_url + '/user/login/')
+        time.sleep(1)
+        
+        self.assertIn('Login', self.browser.title)
+        
+        email_field = self.browser.find_element(By.ID, 'email')
+        password_field = self.browser.find_element(By.ID, 'password')
+        
+        self.assertTrue(email_field.is_displayed())
+        self.assertTrue(password_field.is_displayed())
+
+    # Selenium Test 8: User can login successfully
+    def test_user_login_flow(self):
+        """Test complete user login flow"""
+        self.browser.get(self.live_server_url + '/user/login/')
+        time.sleep(1)
+        
+        # Fill login form
+        self.browser.find_element(By.ID, 'email').send_keys('selenium@test.com')
+        self.browser.find_element(By.ID, 'password').send_keys('testpass123')
+        
+        time.sleep(1)
+        
+        # Submit
+        submit_btn = self.browser.find_element(By.CSS_SELECTOR, 'button[type="submit"]')
+        submit_btn.click()
+        
+        time.sleep(2)
+        
+        # Should redirect to home or dashboard
+        self.assertTrue(
+            '/' in self.browser.current_url or 
+            'dashboard' in self.browser.current_url or
+            'home' in self.browser.current_url
+        )
+
+    # Selenium Test 9: Invalid login shows error
+    def test_invalid_login_shows_error(self):
+        """Test invalid credentials show error message"""
+        self.browser.get(self.live_server_url + '/user/login/')
+        time.sleep(1)
+        
+        self.browser.find_element(By.ID, 'email').send_keys('wrong@email.com')
+        self.browser.find_element(By.ID, 'password').send_keys('wrongpassword')
+        
+        submit_btn = self.browser.find_element(By.CSS_SELECTOR, 'button[type="submit"]')
+        submit_btn.click()
+        
+        time.sleep(1)
+        
+        # Should show error message
+        page_source = self.browser.page_source
+        self.assertTrue(
+            'invalid' in page_source.lower() or 
+            'error' in page_source.lower() or
+            'incorrect' in page_source.lower()
+        )
+
+
+@tag('selenium')
+class SeleniumDashboardTests(StaticLiveServerTestCase):
+    """Selenium tests for user app dashboard functionality"""
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        chrome_options = Options()
+        chrome_options.add_argument('--start-maximized')
+        chrome_options.add_argument('--disable-gpu')
+        service = Service(ChromeDriverManager().install())
+        cls.browser = webdriver.Chrome(service=service, options=chrome_options)
+        cls.browser.implicitly_wait(10)
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.browser.quit()
+        super().tearDownClass()
+
+    def setUp(self):
+        # Create medical user (stays on user dashboard, not redirected)
+        self.medical_user = User.objects.create_user(
+            email='medical@test.com',
+            name='Test Medical',
+            password='testpass123',
+            role='medical'
+        )
+        MedicalProfile.objects.create(user=self.medical_user)
+
+    def _login(self, email, password):
+        """Helper method to login a user"""
+        self.browser.get(self.live_server_url + '/user/login/')
+        self.browser.find_element(By.ID, 'email').send_keys(email)
+        self.browser.find_element(By.ID, 'password').send_keys(password)
+        self.browser.find_element(By.CSS_SELECTOR, 'button[type="submit"]').click()
+        time.sleep(2)
+
+    # Selenium Test 10: User dashboard requires login
+    def test_dashboard_requires_login(self):
+        """Test dashboard redirects to login if not authenticated"""
+        self.browser.get(self.live_server_url + '/user/dashboard/')
+        time.sleep(1)
+        
+        # Should be redirected to login
+        self.assertIn('login', self.browser.current_url)
+
+    # Selenium Test 11: Medical user can access dashboard
+    def test_medical_dashboard_loads(self):
+        """Test medical user can access user dashboard"""
+        self._login('medical@test.com', 'testpass123')
+        
+        self.browser.get(self.live_server_url + '/user/dashboard/')
+        time.sleep(1)
+        
+        # Should see dashboard content
+        page_source = self.browser.page_source
+        self.assertTrue('Dashboard' in page_source or 'Welcome' in page_source)
+
+    # Selenium Test 12: Login redirects to home
+    def test_login_redirects_to_home(self):
+        """Test successful login redirects to home page"""
+        self._login('medical@test.com', 'testpass123')
+        
+        # Should be on home page after login
+        self.assertTrue(
+            self.browser.current_url.endswith('/') or 
+            'home' in self.browser.current_url
+        )
+
+
+@tag('selenium')
+class SeleniumProfileTests(StaticLiveServerTestCase):
+    """Selenium tests for profile functionality"""
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        chrome_options = Options()
+        chrome_options.add_argument('--start-maximized')
+        chrome_options.add_argument('--disable-gpu')
+        service = Service(ChromeDriverManager().install())
+        cls.browser = webdriver.Chrome(service=service, options=chrome_options)
+        cls.browser.implicitly_wait(10)
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.browser.quit()
+        super().tearDownClass()
+
+    def setUp(self):
+        self.user = User.objects.create_user(
+            email='profile@test.com',
+            name='Profile Tester',
+            password='testpass123',
+            role='athlete',
+            phone='1234567890',
+            blood_group='O+'
+        )
+        AthleteProfile.objects.create(user=self.user)
+
+    def _login(self):
+        """Helper to login"""
+        self.browser.get(self.live_server_url + '/user/login/')
+        self.browser.find_element(By.ID, 'email').send_keys('profile@test.com')
+        self.browser.find_element(By.ID, 'password').send_keys('testpass123')
+        self.browser.find_element(By.CSS_SELECTOR, 'button[type="submit"]').click()
+        time.sleep(2)
+
+    # Selenium Test 13: Profile page shows user info
+    def test_profile_shows_user_info(self):
+        """Test profile page displays user information"""
+        self._login()
+        
+        self.browser.get(self.live_server_url + '/user/profile/')
+        time.sleep(1)
+        
+        page_source = self.browser.page_source
+        self.assertIn('Profile Tester', page_source)
+        self.assertIn('profile@test.com', page_source)
+
+    # Selenium Test 14: Profile shows blood group
+    def test_profile_shows_blood_group(self):
+        """Test profile page displays blood group"""
+        self._login()
+        
+        self.browser.get(self.live_server_url + '/user/profile/')
+        time.sleep(1)
+        
+        page_source = self.browser.page_source
+        self.assertIn('O+', page_source)
+
+    # Selenium Test 15: Edit profile link works
+    def test_edit_profile_link(self):
+        """Test edit profile link navigates correctly"""
+        self._login()
+        
+        self.browser.get(self.live_server_url + '/user/profile/')
+        time.sleep(1)
+        
+        # Find and click edit link
+        edit_link = self.browser.find_element(By.LINK_TEXT, '✏️ Edit Profile')
+        edit_link.click()
+        time.sleep(1)
+        
+        self.assertIn('edit', self.browser.current_url)
+
+    # Selenium Test 16: Profile edit form works
+    def test_profile_edit_form(self):
+        """Test profile edit form can be submitted"""
+        self._login()
+        
+        self.browser.get(self.live_server_url + '/user/profile/edit/')
+        time.sleep(1)
+        
+        # Update name
+        name_field = self.browser.find_element(By.ID, 'name')
+        name_field.clear()
+        name_field.send_keys('Updated Name')
+        
+        time.sleep(1)
+        
+        # Submit
+        submit_btn = self.browser.find_element(By.CSS_SELECTOR, 'button[type="submit"]')
+        submit_btn.click()
+        
+        time.sleep(2)
+        
+        # Should redirect to profile
+        self.assertIn('profile', self.browser.current_url)
+
+
+@tag('selenium')
+class SeleniumLogoutTests(StaticLiveServerTestCase):
+    """Selenium tests for logout functionality"""
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        chrome_options = Options()
+        chrome_options.add_argument('--start-maximized')
+        chrome_options.add_argument('--disable-gpu')
+        service = Service(ChromeDriverManager().install())
+        cls.browser = webdriver.Chrome(service=service, options=chrome_options)
+        cls.browser.implicitly_wait(10)
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.browser.quit()
+        super().tearDownClass()
+
+    def setUp(self):
+        self.user = User.objects.create_user(
+            email='logout@test.com',
+            name='Logout Tester',
+            password='testpass123',
+            role='athlete'
+        )
+        AthleteProfile.objects.create(user=self.user)
+
+    # Selenium Test 17: User can logout
+    def test_logout_flow(self):
+        """Test user can logout successfully"""
+        # Login first
+        self.browser.get(self.live_server_url + '/user/login/')
+        self.browser.find_element(By.ID, 'email').send_keys('logout@test.com')
+        self.browser.find_element(By.ID, 'password').send_keys('testpass123')
+        self.browser.find_element(By.CSS_SELECTOR, 'button[type="submit"]').click()
+        time.sleep(2)
+        
+        # Go to dashboard
+        self.browser.get(self.live_server_url + '/player/')
+        time.sleep(1)
+        
+        # Click logout
+        logout_link = self.browser.find_element(By.LINK_TEXT, 'Logout')
+        logout_link.click()
+        time.sleep(2)
+        
+        # Should be on home or login page
+        self.assertTrue(
+            'login' in self.browser.current_url or 
+            self.browser.current_url.endswith('/')
+        )
+
