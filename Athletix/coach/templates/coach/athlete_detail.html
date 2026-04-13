@@ -109,8 +109,30 @@
                                             <p style="color: var(--gray-600); font-size: 13px;">
                                                 {{ routine.sport.name }} • {{ routine.start_time|time:"H:i" }} - {{ routine.end_time|time:"H:i" }}
                                             </p>
+                                            {% if routine.coach_approved_completion %}
+                                            <p style="color: #10b981; font-size: 12px; margin-top: 6px; font-weight: 600;">
+                                                Complete (Coach Approved)
+                                            </p>
+                                            {% else %}
+                                            <p style="color: #6b7280; font-size: 12px; margin-top: 6px; font-weight: 600;">
+                                                Not complete
+                                            </p>
+                                            {% endif %}
+                                            {% if routine.completion_message %}
+                                            <p style="color: var(--gray-500); font-size: 12px; margin-top: 4px;">
+                                                {{ routine.completion_message }}
+                                            </p>
+                                            {% endif %}
                                         </div>
                                         <div style="display: flex; gap: 8px;">
+                                            {% if not routine.coach_approved_completion %}
+                                            <form method="post" action="{% url 'coach:approve_routine_completion' routine.id %}" style="display: inline;">
+                                                {% csrf_token %}
+                                                <button type="submit" style="color: #10b981; font-size: 13px; background: none; border: none; cursor: pointer;">
+                                                    Approve
+                                                </button>
+                                            </form>
+                                            {% endif %}
                                             <a href="{% url 'coach:edit_routine' routine.id %}" style="color: var(--primary); font-size: 13px;">Edit</a>
                                             <form method="post" action="{% url 'coach:delete_routine' routine.id %}" style="display: inline;" onsubmit="return confirm('Delete this routine?');">
                                                 {% csrf_token %}
