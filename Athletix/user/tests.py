@@ -4,10 +4,21 @@ from django.contrib.auth import get_user_model
 
 from .models import User, AthleteProfile, CoachProfile, MedicalProfile
 from .forms import SignUpForm, LoginForm, ForgotPasswordForm, ProfileEditForm
+from django.contrib.staticfiles.testing import StaticLiveServerTestCase
 
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.ui import Select
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.chrome.service import Service
+from webdriver_manager.chrome import ChromeDriverManager
+from django.test import tag
+import time
 
 # ============================================================================
-#                       MODEL TESTS (Tests 1-13)
+# MODEL TESTS (Tests 1-13)
 # ============================================================================
 
 class UserModelTests(TestCase):
@@ -487,12 +498,12 @@ class LogoutViewTests(TestCase):
             password='testpass123'
         )
 
-    # Test 41: Logout redirects to login
-    def test_logout_redirects_to_login(self):
-        """Test logout redirects to login page"""
+    # Test 41: Logout redirects to home
+    def test_logout_redirects_to_home(self):
+        """Test logout redirects to home page"""
         self.client.force_login(self.user)
         response = self.client.get(reverse('logout'))
-        self.assertRedirects(response, reverse('login'))
+        self.assertRedirects(response, reverse('home'))
 
     # Test 42: Logout requires login
     def test_logout_requires_login(self):
@@ -545,13 +556,14 @@ class DashboardViewTests(TestCase):
     """Tests for dashboard view"""
 
     def setUp(self):
+        # Use medical role since athlete/coach redirects to their app dashboards
         self.user = User.objects.create_user(
             email='test@example.com',
             name='Test User',
             password='testpass123',
-            role='athlete'
+            role='medical'
         )
-        AthleteProfile.objects.create(user=self.user)
+        MedicalProfile.objects.create(user=self.user)
         self.dashboard_url = reverse('dashboard')
 
     # Test 46: Dashboard requires login
@@ -573,6 +585,34 @@ class DashboardViewTests(TestCase):
         self.client.force_login(self.user)
         response = self.client.get(self.dashboard_url)
         self.assertTemplateUsed(response, 'user/dashboard.html')
+
+    # Test 48b: Athlete redirects to player dashboard
+    def test_athlete_redirects_to_player_dashboard(self):
+        """Test athlete is redirected to player dashboard"""
+        athlete = User.objects.create_user(
+            email='athlete@example.com',
+            name='Athlete User',
+            password='testpass123',
+            role='athlete'
+        )
+        AthleteProfile.objects.create(user=athlete)
+        self.client.force_login(athlete)
+        response = self.client.get(self.dashboard_url)
+        self.assertRedirects(response, reverse('player:dashboard'))
+
+    # Test 48c: Coach redirects to coach dashboard
+    def test_coach_redirects_to_coach_dashboard(self):
+        """Test coach is redirected to coach dashboard"""
+        coach = User.objects.create_user(
+            email='coach@example.com',
+            name='Coach User',
+            password='testpass123',
+            role='coach'
+        )
+        CoachProfile.objects.create(user=coach)
+        self.client.force_login(coach)
+        response = self.client.get(self.dashboard_url)
+        self.assertRedirects(response, reverse('coach:dashboard'))
 
 
 class ProfileViewTests(TestCase):
@@ -632,12 +672,22 @@ class ProfileEditViewTests(TestCase):
             'name': 'Updated Name',
             'email': 'test@example.com',
             'phone': '1234567890',
-            'address': 'New Address'
+            'address': 'New Address',
+            'date_of_birth': '',
+            'blood_group': 'O+',
         })
         self.assertRedirects(response, reverse('profile'))
         self.user.refresh_from_db()
         self.assertEqual(self.user.name, 'Updated Name')
         self.assertEqual(self.user.phone, '1234567890')
+
+# ============================================================================
+# SELENIUM TESTS (Browser-based UI Tests)
+# ============================================================================
+# Run these tests with: python manage.py test user.tests --tag=selenium
+# Make sure Chrome and ChromeDriver are installed
+# These tests will open a visible browser window
+
 
 
 @tag('selenium')
@@ -665,7 +715,9 @@ class SeleniumHomePageTests(StaticLiveServerTestCase):
     def test_home_page_loads(self):
         """Test home page loads and displays logo"""
         self.browser.get(self.live_server_url + '/')
-        time.sleep(1)  # Brief pause to see the page
+        WebDriverWait(self.browser, 10).until(
+            EC.presence_of_element_located((By.CSS_SELECTOR, 'a.nav-logo'))
+        ) # Brief pause to see the page
         
         # Check page title
         self.assertIn('Athletix', self.browser.title)
@@ -678,7 +730,9 @@ class SeleniumHomePageTests(StaticLiveServerTestCase):
     def test_home_page_nav_links(self):
         """Test home page has login and signup links"""
         self.browser.get(self.live_server_url + '/')
-        time.sleep(1)
+        WebDriverWait(self.browser, 10).until(
+            EC.presence_of_element_located((By.ID, 'navLinks'))
+        )
         
         # Find login link
         login_link = self.browser.find_element(By.LINK_TEXT, 'Login')
@@ -692,11 +746,17 @@ class SeleniumHomePageTests(StaticLiveServerTestCase):
     def test_click_login_link(self):
         """Test clicking login link navigates to login page"""
         self.browser.get(self.live_server_url + '/')
-        time.sleep(1)
+        WebDriverWait(self.browser, 10).until(
+            EC.presence_of_element_located((By.ID, 'navLinks'))
+        )
+        
         
         login_link = self.browser.find_element(By.LINK_TEXT, 'Login')
         login_link.click()
-        time.sleep(1)
+        WebDriverWait(self.browser, 10).until(
+            lambda d: '/user/login/' in d.current_url
+        )
+        
         
         # Should be on login page
         self.assertIn('login', self.browser.current_url)
@@ -1015,6 +1075,9 @@ class SeleniumProfileTests(StaticLiveServerTestCase):
         self._login()
         
         self.browser.get(self.live_server_url + '/user/profile/')
+        WebDriverWait(self.browser, 10).until(
+            EC.presence_of_element_located((By.TAG_NAME, 'body'))
+        )
         time.sleep(1)
         
         # Find and click edit link
@@ -1088,11 +1151,15 @@ class SeleniumLogoutTests(StaticLiveServerTestCase):
         time.sleep(2)
         
         # Go to dashboard
-        self.browser.get(self.live_server_url + '/player/')
-        time.sleep(1)
+        self.browser.get(self.live_server_url + '/player/dashboard/')
+        WebDriverWait(self.browser, 10).until(
+            EC.presence_of_element_located((By.TAG_NAME, 'body'))
+        )
         
         # Click logout
-        logout_link = self.browser.find_element(By.LINK_TEXT, 'Logout')
+        logout_link = WebDriverWait(self.browser, 10).until(
+            EC.element_to_be_clickable((By.XPATH, "//a[contains(@href, '/user/logout/')]"))
+        )
         logout_link.click()
         time.sleep(2)
         
