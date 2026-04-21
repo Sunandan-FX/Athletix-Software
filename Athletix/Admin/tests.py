@@ -183,5 +183,105 @@ class AdminAppTests(TestCase):
         self.assertEqual(response.url, reverse('admin_app:users'))
         self.assertTrue(MedicalProfile.objects.filter(user=medical_user).exists())
 
+@tag('selenium')
+class AdminAppSeleniumTests(StaticLiveServerTestCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        options = Options()
+        if os.getenv('SELENIUM_HEADLESS', '0') == '1':
+            options.add_argument('--headless=new')
+        else:
+            options.add_argument('--start-maximized')
+        options.add_argument('--disable-gpu')
+        options.add_argument('--window-size=1400,900')
+        try:
+            cls.browser = webdriver.Chrome(
+                service=Service(ChromeDriverManager().install()),
+                options=options,
+            )
+            cls.browser.implicitly_wait(10)
+        except Exception as exc:
+            raise SkipTest(f'Selenium WebDriver unavailable: {exc}')
+
+    @classmethod
+    def tearDownClass(cls):
+        if hasattr(cls, 'browser'):
+            cls.browser.quit()
+        super().tearDownClass()
+
+    def setUp(self):
+        self.staff_user = User.objects.create_user(
+            email='selenium_admin_staff@example.com',
+            name='Selenium Staff',
+            password='pass12345',
+            role='coach',
+            is_staff=True,
+        )
+        self.pending_coach = User.objects.create_user(
+            email='selenium_pending_coach@example.com',
+            name='Pending Selenium Coach',
+            password='pass12345',
+            role='coach',
+            is_approved=False,
+            is_active=False,
+        )
+        self.normal_user = User.objects.create_user(
+            email='selenium_normal_user@example.com',
+            name='Selenium Normal User',
+            password='pass12345',
+            role='athlete',
+            is_active=True,
+        )
+
+    def _login(self, email, password):
+        self.browser.get(self.live_server_url + reverse('login'))
+        WebDriverWait(self.browser, 10).until(
+            lambda d: d.find_element(By.ID, 'email').is_displayed()
+        )
+        self.browser.find_element(By.ID, 'email').clear()
+        self.browser.find_element(By.ID, 'email').send_keys(email)
+        self.browser.find_element(By.ID, 'password').clear()
+        self.browser.find_element(By.ID, 'password').send_keys(password)
+        self.browser.find_element(By.CSS_SELECTOR, "button[type='submit']").click()
+
+    def test_staff_can_open_admin_app_dashboard(self):
+        self._login('selenium_admin_staff@example.com', 'pass12345')
+        self.browser.get(self.live_server_url + reverse('admin_app:dashboard'))
+        WebDriverWait(self.browser, 10).until(lambda d: 'admin-app' in d.current_url)
+        self.assertIn('Admin App', self.browser.page_source)
+
+    def test_staff_can_approve_pending_coach_from_users_page(self):
+        self._login('selenium_admin_staff@example.com', 'pass12345')
+        self.browser.get(self.live_server_url + reverse('admin_app:users'))
+        approve_button = WebDriverWait(self.browser, 10).until(
+            lambda d: d.find_element(
+                By.XPATH,
+                f"//form[contains(@action, '/admin-app/approve-coach/{self.pending_coach.id}/')]//button"
+            )
+        )
+        approve_button.click()
+        WebDriverWait(self.browser, 10).until(
+            lambda _: User.objects.get(id=self.pending_coach.id).is_approved
+        )
+        self.pending_coach.refresh_from_db()
+        self.assertTrue(self.pending_coach.is_approved)
+        self.assertTrue(self.pending_coach.is_active)
+
+    def test_staff_can_toggle_user_status_from_users_page(self):
+        self._login('selenium_admin_staff@example.com', 'pass12345')
+        self.browser.get(self.live_server_url + reverse('admin_app:users'))
+        toggle_button = WebDriverWait(self.browser, 10).until(
+            lambda d: d.find_element(
+                By.XPATH,
+                f"//form[contains(@action, '/admin-app/users/{self.normal_user.id}/toggle-status/')]//button"
+            )
+        )
+        toggle_button.click()
+        WebDriverWait(self.browser, 10).until(
+            lambda _: not User.objects.get(id=self.normal_user.id).is_active
+        )
+        self.normal_user.refresh_from_db()
+        self.assertFalse(self.normal_user.is_active)
 
 
