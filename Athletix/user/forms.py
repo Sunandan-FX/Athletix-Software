@@ -142,7 +142,7 @@ class ResetPasswordForm(forms.Form):
 class ProfileEditForm(forms.ModelForm):
     class Meta:
         model = User
-        fields = ['name', 'email', 'phone', 'date_of_birth', 'blood_group', 'address', 'profile_photo']
+        fields = ['name', 'email', 'phone', 'address', 'profile_photo']
         widgets = {
             'name': forms.TextInput(attrs={
                 'class': 'form-input',
@@ -158,15 +158,6 @@ class ProfileEditForm(forms.ModelForm):
                 'class': 'form-input',
                 'placeholder': 'Enter your phone number',
                 'id': 'phone'
-            }),
-            'date_of_birth': forms.DateInput(attrs={
-                'class': 'form-input',
-                'type': 'date',
-                'id': 'date_of_birth'
-            }),
-            'blood_group': forms.Select(attrs={
-                'class': 'form-input',
-                'id': 'blood_group'
             }),
             'address': forms.Textarea(attrs={
                 'class': 'form-input',
