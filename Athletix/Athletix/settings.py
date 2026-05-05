@@ -30,6 +30,9 @@ INSTALLED_APPS = [
     'user',
     'player',
     'coach',
+    'Admin',
+    'medical_staff',
+    'chat',
 ]
 
 MIDDLEWARE = [
@@ -38,6 +41,7 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'Admin.middleware.AdminAccessWhitelistMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
@@ -84,6 +88,7 @@ USE_I18N = True
 USE_TZ = True
 
 STATIC_URL = 'static/'
+STATICFILES_DIRS = [BASE_DIR / 'static']
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
@@ -96,4 +101,8 @@ EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 # Media files (uploads)
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
+
+# Restricted admin access list (non-superuser staff allowed only if email is listed here)
+ADMIN_ALLOWED_EMAILS = []
+
 

@@ -10,8 +10,8 @@
             <p>Manage your athletes and their training</p>
         </div>
         <div class="header-actions">
-            <a href="{% url 'coach:dashboard' %}" class="btn-logout">Dashboard</a>
-            <a href="{% url 'logout' %}" class="btn-logout">Logout</a>
+            <a href="javascript:history.back()" class="btn-logout">Back</a>
+            <a href="{% url 'coach:dashboard' %}" class="btn-logout">Dashboard</a>            <a href="{% url 'logout' %}" class="btn-logout">Logout</a>
         </div>
     </div>
 
@@ -66,6 +66,11 @@
                     </a>
                     <a href="{% url 'coach:create_routine' ac.athlete.athlete_profile.id %}" class="btn btn-primary" style="flex: 1; text-align: center; background: var(--secondary);">
                         + Routine
+                    </a>
+                </div>
+                <div style="margin-top: 10px;">
+                    <a href="{% url 'coach:performance' %}?athlete={{ ac.id }}" style="display: block; text-align: center; color: var(--primary); font-size: 13px; font-weight: 600; text-decoration: none;">
+                        View Performance Chart →
                     </a>
                 </div>
             </div>
