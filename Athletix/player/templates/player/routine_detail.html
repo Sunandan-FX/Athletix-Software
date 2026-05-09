@@ -10,9 +10,8 @@
             <p>Routine Details</p>
         </div>
         <div class="header-actions">
-            <a href="{% url 'home' %}" class="btn-logout">🏠 Home</a>
-            <a href="{% url 'player:daily_routine' %}" class="btn-logout">All Routines</a>
-            <a href="{% url 'player:dashboard' %}" class="btn-logout">Dashboard</a>
+            <a href="javascript:history.back()" class="btn-logout">Back</a>
+            <a href="{% url 'player:daily_routine' %}" class="btn-logout">All Routines</a>            <a href="{% url 'player:dashboard' %}" class="btn-logout">Dashboard</a>
         </div>
     </div>
 
@@ -25,6 +24,11 @@
                         <span style="background: var(--primary); color: white; padding: 6px 16px; border-radius: 20px; font-size: 14px; text-transform: capitalize;">
                             {{ routine.day_of_week }}
                         </span>
+                        {% if routine.workout_date %}
+                        <span style="background: #0f3555; color: white; padding: 6px 16px; border-radius: 20px; font-size: 14px; margin-left: 10px;">
+                            {{ routine.workout_date|date:"M d, Y" }}
+                        </span>
+                        {% endif %}
                         <span style="background: var(--secondary); color: white; padding: 6px 16px; border-radius: 20px; font-size: 14px; margin-left: 10px;">
                             {{ routine.start_time|time:"H:i" }} - {{ routine.end_time|time:"H:i" }}
                         </span>
@@ -99,6 +103,18 @@
                     <p style="color: var(--primary); font-size: 24px; font-weight: 700;">
                         {{ routine.start_time|time:"H:i" }} - {{ routine.end_time|time:"H:i" }}
                     </p>
+                </div>
+
+                <div class="info-card" style="padding: 25px; margin-top: 20px;">
+                    <h4 style="color: var(--gray-700); margin-bottom: 12px;">Completion Status</h4>
+                    {% if routine.coach_approved_completion %}
+                    <p style="color: #10b981; font-weight: 600;">Complete (Coach Approved)</p>
+                    {% else %}
+                    <p style="color: #ef4444; font-weight: 600;">Not complete</p>
+                    {% endif %}
+                    {% if routine.completion_message %}
+                    <p style="color: var(--gray-500); font-size: 13px; margin-top: 8px;">{{ routine.completion_message }}</p>
+                    {% endif %}
                 </div>
             </div>
         </div>

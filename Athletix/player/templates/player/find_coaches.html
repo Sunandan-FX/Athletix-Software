@@ -10,8 +10,8 @@
             <p>Browse and request coaches for your training</p>
         </div>
         <div class="header-actions">
-            <a href="{% url 'player:dashboard' %}" class="btn-logout">Dashboard</a>
-            <a href="{% url 'logout' %}" class="btn-logout">Logout</a>
+            <a href="javascript:history.back()" class="btn-logout">Back</a>
+            <a href="{% url 'player:dashboard' %}" class="btn-logout">Dashboard</a>            <a href="{% url 'logout' %}" class="btn-logout">Logout</a>
         </div>
     </div>
 
@@ -33,7 +33,7 @@
                 <label style="color: var(--gray-700); font-weight: 500;">Filter by Sport:</label>
                 <select name="sport" style="padding: 10px 15px; border: 1px solid var(--gray-300); border-radius: var(--radius); min-width: 200px;">
                     <option value="">All Sports</option>
-                    {% for sport in sports %}
+                    {% for sport in all_sports %}
                     <option value="{{ sport.id }}" {% if selected_sport == sport.id|stringformat:"i" %}selected{% endif %}>
                         {{ sport.name }}
                     </option>
@@ -67,6 +67,18 @@
                 </div>
                 {% endif %}
 
+                {% if coach.sport %}
+                <div style="margin-bottom: 15px;">
+                    <label style="color: var(--gray-500); font-size: 12px; text-transform: uppercase;">Sport</label>
+                    <p style="color: var(--gray-700);">{{ coach.sport.name }}</p>
+                </div>
+                {% else %}
+                <div style="margin-bottom: 15px;">
+                    <label style="color: var(--gray-500); font-size: 12px; text-transform: uppercase;">Sport</label>
+                    <p style="color: var(--gray-700); font-style: italic;">Not assigned</p>
+                </div>
+                {% endif %}
+
                 {% if coach.experience_years %}
                 <div style="margin-bottom: 15px;">
                     <label style="color: var(--gray-500); font-size: 12px; text-transform: uppercase;">Experience</label>
@@ -83,13 +95,26 @@
                     <span style="background: var(--secondary); color: white; padding: 10px 20px; border-radius: var(--radius); display: inline-block;">
                         ✓ Already Your Coach
                     </span>
-                    {% else %}
+                    {% elif coach.sport and coach.sport.id in athlete_sports %}
+                    <!-- Request button enabled: coach has sport and it matches player's interests -->
                     <form method="post" action="{% url 'player:request_coach' coach.id %}" style="display: inline;">
                         {% csrf_token %}
                         <button type="submit" class="btn btn-primary" style="width: auto; padding: 10px 25px;">
                             Request Coach
                         </button>
                     </form>
+                    {% else %}
+                    <!-- Request button disabled: coach sport doesn't match player's interests -->
+                    <button type="button" disabled style="background: var(--gray-300); color: var(--gray-500); padding: 10px 20px; border-radius: var(--radius); border: none; cursor: not-allowed; display: inline-block;">
+                        ✗ Sport Not Selected
+                    </button>
+                    <p style="color: var(--gray-500); font-size: 12px; margin-top: 8px;">
+                        {% if coach.sport %}
+                        Select {{ coach.sport.name }} to request this coach
+                        {% else %}
+                        This coach hasn't assigned a sport yet
+                        {% endif %}
+                    </p>
                     {% endif %}
                 </div>
             </div>
@@ -97,14 +122,10 @@
         </div>
         {% else %}
         <div class="info-card" style="padding: 60px; text-align: center;">
-            <div style="font-size: 60px; margin-bottom: 20px;">🔍</div>
+            <div style="font-size: 60px; margin-bottom: 20px;">👥</div>
             <h3 style="color: var(--gray-700); margin-bottom: 10px;">No Coaches Found</h3>
             <p style="color: var(--gray-500);">
-                {% if selected_sport %}
-                No coaches available for the selected sport. Try selecting a different sport.
-                {% else %}
-                There are no coaches available at the moment. Please check back later.
-                {% endif %}
+                No coaches available on the platform yet.
             </p>
         </div>
         {% endif %}

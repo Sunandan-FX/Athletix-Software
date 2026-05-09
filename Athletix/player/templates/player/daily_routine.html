@@ -10,8 +10,8 @@
             <p>Your training schedule and routines</p>
         </div>
         <div class="header-actions">
-            <a href="{% url 'player:dashboard' %}" class="btn-logout">Dashboard</a>
-            <a href="{% url 'logout' %}" class="btn-logout">Logout</a>
+            <a href="javascript:history.back()" class="btn-logout">Back</a>
+            <a href="{% url 'player:dashboard' %}" class="btn-logout">Dashboard</a>            <a href="{% url 'logout' %}" class="btn-logout">Logout</a>
         </div>
     </div>
 
@@ -68,6 +68,11 @@
                                     <p style="color: var(--gray-600); font-size: 14px;">
                                         {{ routine.sport.name }} • Coach: {{ routine.coach.user.first_name }} {{ routine.coach.user.last_name }}
                                     </p>
+                                    {% if routine.workout_date %}
+                                    <p style="color: var(--gray-500); font-size: 12px;">
+                                        {{ routine.workout_date|date:"M d, Y" }}
+                                    </p>
+                                    {% endif %}
                                 </div>
                                 <div style="text-align: right;">
                                     <span style="background: var(--secondary); color: white; padding: 4px 12px; border-radius: 15px; font-size: 12px;">
@@ -76,6 +81,15 @@
                                 </div>
                             </div>
                             <div style="margin-top: 10px;">
+                                {% if routine.coach_approved_completion %}
+                                <span style="display: inline-block; margin-right: 10px; color: #10b981; font-size: 13px; font-weight: 600;">
+                                    Complete (Coach Approved)
+                                </span>
+                                {% else %}
+                                <span style="display: inline-block; margin-right: 10px; color: #ef4444; font-size: 13px; font-weight: 600;">
+                                    Not complete
+                                </span>
+                                {% endif %}
                                 <a href="{% url 'player:routine_detail' routine.id %}" style="color: var(--primary); font-size: 13px;">
                                     View Details →
                                 </a>
