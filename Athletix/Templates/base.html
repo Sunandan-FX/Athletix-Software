@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Athletix{% endblock %}</title>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap');
+
         * {
             margin: 0;
             padding: 0;
@@ -44,14 +46,16 @@
         }
 
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Poppins', Roboto, 'Helvetica Neue', sans-serif;
+            font-family: 'Manrope', 'Plus Jakarta Sans', 'Trebuchet MS', sans-serif;
             background: linear-gradient(125deg, #E8F0F8 0%, #D9E6F2 100%);
             min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-            line-height: 1.5;
+            display: block;
+            padding: 0;
+            line-height: 1.55;
+            color: var(--gray-900);
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            text-rendering: optimizeLegibility;
         }
 
         .auth-container {
@@ -120,6 +124,25 @@
             z-index: 1;
         }
 
+        /* Rounded logo utilities */
+        .round-logo {
+            height: 36px;
+            width: 36px;
+            border-radius: 50%;
+            object-fit: cover;
+            vertical-align: middle;
+            display: inline-block;
+        }
+
+        .round-logo-lg {
+            height: 64px;
+            width: 64px;
+            border-radius: 50%;
+            object-fit: cover;
+            vertical-align: middle;
+            display: inline-block;
+        }
+
         .auth-body {
             padding: 36px 32px 32px;
         }
@@ -158,6 +181,10 @@
             background: var(--white);
         }
 
+        .form-input:hover {
+            border-color: var(--gray-400);
+        }
+
         .form-input:focus {
             border-color: var(--secondary);
             box-shadow: 0 0 0 3px rgba(0, 168, 150, 0.1);
@@ -184,6 +211,23 @@
             font-weight: 600;
             cursor: pointer;
             transition: var(--transition);
+            text-decoration: none !important;
+            letter-spacing: 0.2px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        a.btn,
+        a.btn:hover,
+        a.btn:focus,
+        a.btn:active,
+        .btn-logout,
+        .btn-logout:hover,
+        .btn-logout:focus,
+        .btn-logout:active {
+            text-decoration: none !important;
         }
 
         .btn-primary {
@@ -343,6 +387,12 @@
             background: var(--gray-100);
         }
 
+        .header-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
         .info-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -420,6 +470,7 @@
             transform: translateY(-1px);
         }
 
+
         .password-wrapper { position: relative; }
 
         .password-wrapper .form-input { padding-right: 48px; }
@@ -441,6 +492,33 @@
 
         .toggle-password:hover { color: var(--secondary); }
 
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: var(--white);
+            border-radius: var(--radius);
+            overflow: hidden;
+        }
+
+        th,
+        td {
+            padding: 10px 12px;
+            vertical-align: middle;
+        }
+
+        th {
+            background: var(--gray-100);
+            color: var(--gray-700);
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.4px;
+            text-transform: uppercase;
+        }
+
+        tr + tr td {
+            border-top: 1px solid var(--gray-200);
+        }
+
         @media (max-width: 480px) {
             .auth-body { padding: 28px 20px; }
             .auth-header { padding: 32px 24px; }
@@ -455,7 +533,8 @@
     </style>
 </head>
 <body>
-    {% block content %}{% endblock %}
+    {% block content %}
+    {% endblock %}
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
