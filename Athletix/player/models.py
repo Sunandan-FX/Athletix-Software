@@ -1,138 +1,73 @@
-from django.db import models
 from django.conf import settings
+from django.db import models
 
 
-class Sport(models.Model):
-    """Available sports for training"""
-    name = models.CharField(max_length=100, unique=True)
-    description = models.TextField(blank=True)
-    icon = models.CharField(max_length=50, blank=True)  # For emoji or icon class
-
-    def __str__(self):
-        return self.name
-
-    class Meta:
-        db_table = 'sport'
-        ordering = ['name']
-
-
-class CoachRequest(models.Model):
-    """Athlete's request to a coach for training"""
-    STATUS_CHOICES = (
-        ('pending', 'Pending'),
-        ('accepted', 'Accepted'),
-        ('rejected', 'Rejected'),
+class AthleteHealthRecord(models.Model):
+    INJURY_STATUS_CHOICES = (
+        ('none', 'No Injury'),
+        ('minor', 'Minor Injury'),
+        ('moderate', 'Moderate Injury'),
+        ('severe', 'Severe Injury'),
+        ('recovering', 'Recovering'),
+    )
+    RECOVERY_STATUS_CHOICES = (
+        ('good', 'Good'),
+        ('watch', 'Needs Monitoring'),
+        ('critical', 'Critical'),
     )
 
     athlete = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name='coach_requests_sent'
+        related_name='health_records',
     )
-    coach = models.ForeignKey(
+    medical_staff = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name='coach_requests_received'
+        related_name='recorded_health_metrics',
+        null=True,
+        blank=True,
     )
-    sport = models.ForeignKey(Sport, on_delete=models.CASCADE)
-    message = models.TextField(blank=True, help_text="Message to the coach")
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    recorded_on = models.DateField(auto_now_add=True)
+    heart_rate = models.PositiveIntegerField(help_text='Resting heart rate (bpm)')
+    blood_pressure = models.CharField(max_length=20, blank=True, help_text='e.g. 120/80')
+    weight_kg = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+    sleep_hours = models.DecimalField(max_digits=4, decimal_places=1, null=True, blank=True)
+    fatigue_level = models.PositiveSmallIntegerField(default=1, help_text='1(low)-10(high)')
+    injury_status = models.CharField(max_length=20, choices=INJURY_STATUS_CHOICES, default='none')
+    injury_notes = models.TextField(blank=True)
+    recovery_status = models.CharField(max_length=20, choices=RECOVERY_STATUS_CHOICES, default='good')
+    performance_notes = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    def __str__(self):
-        return f"{self.athlete.first_name} -> {self.coach.first_name} ({self.sport.name}) - {self.status}"
+    review_requested = models.BooleanField(default=False, help_text='Player requested medical review')
 
     class Meta:
-        db_table = 'coach_request'
-        unique_together = ['athlete', 'coach', 'sport']
+        db_table = 'athlete_health_record'
         ordering = ['-created_at']
 
 
-class AthleteCoach(models.Model):
-    """Relationship between athlete and coach after request is accepted"""
-    athlete = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
-        related_name='my_coaches'
-    )
-    coach = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
-        related_name='my_athletes'
-    )
-    sport = models.ForeignKey(Sport, on_delete=models.CASCADE)
-    start_date = models.DateField(auto_now_add=True)
-    is_active = models.BooleanField(default=True)
-
-    def __str__(self):
-        return f"{self.athlete.first_name} trained by {self.coach.first_name} in {self.sport.name}"
-
-    class Meta:
-        db_table = 'athlete_coach'
-        unique_together = ['athlete', 'coach', 'sport']
-
-
-class DailyRoutine(models.Model):
-    """Daily routine/schedule set by coach for athlete"""
-    DAY_CHOICES = (
-        ('monday', 'Monday'),
-        ('tuesday', 'Tuesday'),
-        ('wednesday', 'Wednesday'),
-        ('thursday', 'Thursday'),
-        ('friday', 'Friday'),
-        ('saturday', 'Saturday'),
-        ('sunday', 'Sunday'),
+class MedicalFeedback(models.Model):
+    FEEDBACK_TYPE_CHOICES = (
+        ('health', 'Health Feedback'),
+        ('performance', 'Performance Feedback'),
     )
 
     athlete = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name='daily_routines'
+        related_name='medical_feedbacks',
     )
-    coach = models.ForeignKey(
+    medical_staff = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name='routines_created'
+        related_name='given_medical_feedbacks',
     )
-    sport = models.ForeignKey(Sport, on_delete=models.CASCADE)
-    day = models.CharField(max_length=20, choices=DAY_CHOICES)
-    title = models.CharField(max_length=200)
-    description = models.TextField(blank=True)
-    start_time = models.TimeField()
-    end_time = models.TimeField()
-    exercises = models.TextField(blank=True, help_text="List of exercises for this session")
-    notes = models.TextField(blank=True, help_text="Additional notes from coach")
+    feedback_type = models.CharField(max_length=20, choices=FEEDBACK_TYPE_CHOICES)
+    title = models.CharField(max_length=150)
+    feedback = models.TextField()
+    recommendations = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    def __str__(self):
-        return f"{self.athlete.first_name} - {self.day} - {self.title}"
 
     class Meta:
-        db_table = 'daily_routine'
-        ordering = ['day', 'start_time']
-
-
-class AthleteSport(models.Model):
-    """Sports selected by athlete for training"""
-    athlete = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
-        related_name='selected_sports'
-    )
-    sport = models.ForeignKey(Sport, on_delete=models.CASCADE)
-    skill_level = models.CharField(
-        max_length=20,
-        choices=[('beginner', 'Beginner'), ('intermediate', 'Intermediate'), ('advanced', 'Advanced')],
-        default='beginner'
-    )
-    joined_at = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return f"{self.athlete.first_name} - {self.sport.name}"
-
-    class Meta:
-        db_table = 'athlete_sport'
-        unique_together = ['athlete', 'sport']
-
+        db_table = 'medical_feedback'
+        ordering = ['-created_at']
