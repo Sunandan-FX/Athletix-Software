@@ -3,6 +3,33 @@
 {% block title %}My Profile - Athletix{% endblock %}
 
 {% block content %}
+<style>
+    .med-card {
+        border: 1px solid #d9e7f3;
+        background: linear-gradient(180deg, #f7fbff 0%, #eef6fd 100%);
+    }
+    .med-title {
+        color: #0f3555;
+        font-weight: 700;
+        letter-spacing: 0.2px;
+    }
+    .status-pill {
+        display: inline-flex;
+        align-items: center;
+        padding: 3px 10px;
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+    .status-watch {
+        color: #7c2d12;
+        background: #ffedd5;
+    }
+    .status-good {
+        color: #065f46;
+        background: #d1fae5;
+    }
+</style>
 <div class="dashboard-container">
     <div class="dashboard-header">
         <div class="user-info">
@@ -10,7 +37,7 @@
             <p>View and manage your {% if user.role == 'athlete' %}athlete{% elif user.role == 'coach' %}coach{% else %}{{ user.get_role_display }}{% endif %} profile</p>
         </div>
         <div class="header-actions">
-            <a href="{% url 'home' %}" class="btn-logout">🏠 Home</a>
+            <a href="javascript:history.back()" class="btn-logout">Back</a>
             {% if user.role == 'athlete' %}
             <a href="{% url 'player:dashboard' %}" class="btn-logout">Dashboard</a>
             {% elif user.role == 'coach' %}
@@ -37,14 +64,22 @@
         <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 30px;">
             <!-- Profile Card -->
             <div class="info-card" style="text-align: center; padding: 30px;">
+                {% if user.profile_photo %}
+                <img
+                    src="{{ user.profile_photo.url }}"
+                    alt="Profile Photo"
+                    style="width: 100px; height: 100px; border-radius: 50%; margin: 0 auto 20px; object-fit: cover; display: block;"
+                >
+                {% else %}
                 <div style="width: 100px; height: 100px; background: {% if user.role == 'athlete' %}var(--secondary){% elif user.role == 'coach' %}var(--primary){% else %}var(--accent){% endif %}; border-radius: 50%; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center; font-size: 40px; color: white;">
                     {{ user.first_name|slice:":1" }}{{ user.last_name|slice:":1" }}
                 </div>
+                {% endif %}
                 <h2 style="color: var(--gray-900);">{{ user.name }}</h2>
                 <p style="color: var(--gray-600);">
                     {% if user.role == 'athlete' %}🏃 Athlete
                     {% elif user.role == 'coach' %}👨‍🏫 Coach
-                    {% elif user.role == 'medical' %}🏥 Medical Staff
+                    {% elif user.role == 'medical' %}Doctor - {% if profile and profile.specialty %}{{ profile.specialty }}{% else %}Specialty Not Set{% endif %}
                     {% else %}{{ user.get_role_display }}{% endif %}
                 </p>
                 {% if user.blood_group %}
@@ -132,6 +167,14 @@
                     </div>
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
                         <div>
+                            <label style="color: var(--gray-500); font-size: 12px; text-transform: uppercase;">Club Name</label>
+                            <p style="color: var(--gray-900); font-size: 16px;">{% if profile %}{{ profile.club_name|default:"Not set" }}{% else %}Not set{% endif %}</p>
+                        </div>
+                        <div>
+                            <label style="color: var(--gray-500); font-size: 12px; text-transform: uppercase;">Sport</label>
+                            <p style="color: var(--gray-900); font-size: 16px;">{% if profile and profile.sport %}{{ profile.sport.name }}{% else %}Not set{% endif %}</p>
+                        </div>
+                        <div>
                             <label style="color: var(--gray-500); font-size: 12px; text-transform: uppercase;">Specialization</label>
                             <p style="color: var(--gray-900); font-size: 16px;">{% if profile %}{{ profile.specialization|default:"Not set" }}{% else %}Not set{% endif %}</p>
                         </div>
@@ -152,7 +195,7 @@
                 {% elif user.role == 'medical' %}
                 <div class="info-card" style="padding: 25px; margin-top: 20px;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--gray-200); padding-bottom: 10px;">
-                        <h3 style="color: var(--gray-900);">🏥 Medical Staff Details</h3>
+                        <h3 style="color: var(--gray-900);">Doctor Specialty Details</h3>
                         <a href="{% url 'profile_edit' %}" style="color: var(--primary); font-size: 13px; text-decoration: none;">✏️ Edit</a>
                     </div>
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
@@ -164,6 +207,36 @@
                             <label style="color: var(--gray-500); font-size: 12px; text-transform: uppercase;">Specialty</label>
                             <p style="color: var(--gray-900); font-size: 16px;">{% if profile %}{{ profile.specialty|default:"Not set" }}{% else %}Not set{% endif %}</p>
                         </div>
+                    </div>
+                </div>
+                <div class="info-card" style="padding: 25px; margin-top: 20px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--gray-200); padding-bottom: 10px;">
+                        <h3 style="color: var(--gray-900);">📊 Medical Activity</h3>
+                        <a href="{% url 'medical_staff:dashboard' %}" style="color: var(--primary); font-size: 13px; text-decoration: none;">Open Dashboard →</a>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        <div>
+                            <label style="color: var(--gray-500); font-size: 12px; text-transform: uppercase;">Health Records Added</label>
+                            <p style="color: var(--gray-900); font-size: 16px;">{{ medical_health_count|default:"0" }}</p>
+                        </div>
+                        <div>
+                            <label style="color: var(--gray-500); font-size: 12px; text-transform: uppercase;">Feedback Entries</label>
+                            <p style="color: var(--gray-900); font-size: 16px;">{{ medical_feedback_count|default:"0" }}</p>
+                        </div>
+                    </div>
+                    <div style="margin-top: 16px;">
+                        <label style="color: var(--gray-500); font-size: 12px; text-transform: uppercase;">Latest Health Records</label>
+                        {% if latest_health_records %}
+                        <div style="margin-top: 8px; display: grid; gap: 8px;">
+                            {% for item in latest_health_records %}
+                            <div style="background: var(--gray-100); padding: 8px 10px; border-radius: var(--radius-sm);">
+                                <strong>{{ item.athlete.name }}</strong> • {{ item.get_injury_status_display }} • {{ item.created_at|date:"M d, Y" }}
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <p style="color: var(--gray-500); margin-top: 8px;">No records yet.</p>
+                        {% endif %}
                     </div>
                 </div>
                 {% endif %}
