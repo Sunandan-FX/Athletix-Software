@@ -5,13 +5,17 @@
 {% block content %}
 <style>
     body {
-        background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
+        background:
+            radial-gradient(circle at top left, rgba(23, 143, 136, 0.18) 0%, transparent 35%),
+            radial-gradient(circle at 80% 20%, rgba(217, 141, 35, 0.16) 0%, transparent 30%),
+            linear-gradient(135deg, #0c1c2d 0%, #13273d 45%, #1c3d56 100%);
         display: block;
         padding: 0;
         margin: 0;
         min-height: 100vh;
         overflow-x: hidden;
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Poppins', Roboto, sans-serif;
+        font-family: 'Manrope', 'Plus Jakarta Sans', 'Trebuchet MS', sans-serif;
+        line-height: 1.55;
     }
 
     .navbar {
@@ -35,6 +39,7 @@
     }
 
     .nav-logo {
+        font-family: 'Plus Jakarta Sans', 'Manrope', sans-serif;
         font-size: 28px;
         font-weight: 800;
         background: linear-gradient(135deg, #FFFFFF, #94A3B8);
@@ -151,6 +156,7 @@
     }
 
     .hero h1 {
+        font-family: 'Plus Jakarta Sans', 'Manrope', sans-serif;
         font-size: 64px;
         font-weight: 800;
         color: #fff;
@@ -187,6 +193,7 @@
     }
 
     .hero-btn {
+        font-family: 'Plus Jakarta Sans', 'Manrope', sans-serif;
         padding: 16px 42px;
         border-radius: 12px;
         font-size: 15px;
@@ -607,13 +614,22 @@
 
 <!-- NAVBAR -->
 <nav class="navbar" id="navbar">
-    <a href="{% url 'home' %}" class="nav-logo">ATHLETI<span>X</span></a>
+    <a href="{% url 'home' %}" class="nav-logo">
+        <img src="/static/images/Logo-2.png" alt="Athletix logo" class="round-logo" style="margin-right:10px;">
+        ATHLETI<span>X</span>
+    </a>
     <button class="mobile-menu-btn" onclick="toggleMobileMenu()">☰</button>
     <div class="nav-links" id="navLinks">
         {% if user.is_authenticated %}
             <span class="nav-greeting">Hi, {{ user.first_name }}!</span>
             <a href="{% url 'profile' %}" class="nav-btn nav-btn-outline">My Profile</a>
             <a href="{% url 'dashboard' %}" class="nav-btn nav-btn-outline">Dashboard</a>
+            {% if user.role == 'medical' %}
+            <a href="{% url 'medical_staff:dashboard' %}" class="nav-btn nav-btn-outline">Medical Dashboard</a>
+            {% endif %}
+            {% if user.is_staff or user.is_superuser %}
+            <a href="{% url 'admin_app:dashboard' %}" class="nav-btn nav-btn-outline">Admin App</a>
+            {% endif %}
             <a href="{% url 'logout' %}" class="nav-btn nav-btn-primary">Logout</a>
         {% else %}
             <a href="{% url 'login' %}" class="nav-btn nav-btn-outline">Log In</a>
@@ -754,7 +770,10 @@
 
 <!-- FOOTER -->
 <footer class="footer">
-    <div class="footer-logo">ATHLETI<span>X</span></div>
+    <div class="footer-logo">
+        <img src="/static/images/Logo-2.png" alt="Athletix logo" class="round-logo" style="margin-right:8px;">
+        ATHLETI<span>X</span>
+    </div>
     <p>Student Intelligence for Athletic Fitness & Health</p>
     <p>University of Asia Pacific — CSE 314: Software Engineering Lab</p>
     <div class="footer-team">
@@ -763,8 +782,8 @@
     </div>
 </footer>
 
-<script> 
-    window.addEventListener('scroll', function() {   //added scrolled function properly 
+<script>
+    window.addEventListener('scroll', function() {
         var navbar = document.getElementById('navbar');
         if (window.scrollY > 50) {
             navbar.classList.add('scrolled');
@@ -786,8 +805,8 @@
             }
         });
     }
-    window.addEventListener('scroll', revealOnScroll); // working for scroll function
-    window.addEventListener('load', revealOnScroll); // working for page load
+    window.addEventListener('scroll', revealOnScroll);
+    window.addEventListener('load', revealOnScroll);
 
     function animateCounter(id, target, suffix) {
         var el = document.getElementById(id);
@@ -835,5 +854,3 @@
     createParticles();
 </script>
 {% endblock %}
-
-
