@@ -57,6 +57,8 @@ class SignUpForm(forms.ModelForm):
     def save(self, commit=True):
         user = super().save(commit=False)
         user.set_password(self.cleaned_data['password'])
+        if user.role in ['coach', 'medical']:
+            user.is_approved = False
         if commit:
             user.save()
         return user
@@ -159,6 +161,15 @@ class ProfileEditForm(forms.ModelForm):
                 'placeholder': 'Enter your phone number',
                 'id': 'phone'
             }),
+            'date_of_birth': forms.DateInput(attrs={
+                'class': 'form-input',
+                'type': 'date',
+                'id': 'date_of_birth'
+            }),
+            'blood_group': forms.Select(attrs={
+                'class': 'form-input',
+                'id': 'blood_group'
+            }),
             'address': forms.Textarea(attrs={
                 'class': 'form-input',
                 'placeholder': 'Enter your address',
@@ -218,6 +229,15 @@ class AthleteProfileForm(forms.Form):
 
 
 class CoachProfileForm(forms.Form):
+    club_name = forms.CharField(
+        required=False,
+        max_length=200,
+        widget=forms.TextInput(attrs={
+            'class': 'form-input',
+            'placeholder': 'e.g., City Sports Club',
+            'id': 'club_name'
+        })
+    )
     specialization = forms.CharField(
         required=False,
         max_length=200,
