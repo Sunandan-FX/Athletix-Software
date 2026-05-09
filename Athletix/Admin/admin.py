@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
-from player.models import AthleteCoach, AthleteSport, CoachRequest, DailyRoutine, Sport
+from player.models import AthleteSport, CoachRequest, DailyRoutine, Sport
 from user.models import AthleteProfile, CoachProfile, MedicalProfile, User
 
 
