@@ -4,6 +4,7 @@ from django.contrib import messages
 from django.db.models import Q
 
 from .models import Sport, CoachRequest, AthleteCoach, DailyRoutine, AthleteSport
+from .performance_utils import build_routine_performance_data
 from user.models import User, CoachProfile
 
 
@@ -36,6 +37,12 @@ def player_dashboard(request):
     from datetime import datetime
     today = datetime.now().strftime('%A').lower()
     todays_routines = DailyRoutine.objects.filter(athlete=user, day=today)
+
+    from medical_staff.forms import AthleteSelfHealthRecordForm
+    from medical_staff.models import AthleteHealthRecord
+    recent_health_records = AthleteHealthRecord.objects.filter(athlete=user).order_by('-created_at')[:5]
+    from medical_staff.models import MedicalFeedback
+    recent_feedbacks = MedicalFeedback.objects.filter(athlete=user).order_by('-created_at')[:5]
     
     context = {
         'user': user,
@@ -43,6 +50,9 @@ def player_dashboard(request):
         'active_coaches': active_coaches,
         'pending_requests': pending_requests,
         'todays_routines': todays_routines,
+        'athlete_health_form': AthleteSelfHealthRecordForm(),
+        'recent_health_records': recent_health_records,
+        'recent_feedbacks': recent_feedbacks,
     }
     return render(request, 'player/dashboard.html', context)
 
@@ -67,6 +77,26 @@ def player_profile(request):
         'active_coaches': active_coaches,
     }
     return render(request, 'player/profile.html', context)
+
+
+@login_required
+@athlete_required
+def health_report(request):
+    """View health metrics and medical feedback for the athlete"""
+    user = request.user
+    from medical_staff.models import AthleteHealthRecord, MedicalFeedback
+
+    health_records = AthleteHealthRecord.objects.filter(athlete=user).select_related('medical_staff')
+    feedbacks = MedicalFeedback.objects.filter(athlete=user).select_related('medical_staff')
+
+    context = {
+        'user': user,
+        'health_records': health_records,
+        'feedbacks': feedbacks,
+        'health_record_count': health_records.count(),
+        'feedback_count': feedbacks.count(),
+    }
+    return render(request, 'player/health_report.html', context)
 
 
 @login_required
@@ -112,17 +142,25 @@ def find_coaches(request):
     user = request.user
     sport_id = request.GET.get('sport')
     
-    # Get all coach profiles
+    athlete_sport_ids = list(
+        AthleteSport.objects.filter(athlete=user).values_list('sport_id', flat=True)
+    )
+
+    # Get ALL active coach profiles (show every coach)
     from user.models import CoachProfile
-    coaches = CoachProfile.objects.filter(user__is_active=True)
+    coaches = CoachProfile.objects.filter(
+        user__is_active=True,
+    ).select_related('user', 'sport')
     
-    # Filter by sport specialization if selected
-    if sport_id:
-        sport = get_object_or_404(Sport, id=sport_id)
-        coaches = coaches.filter(specialization__icontains=sport.name)
+    # Optional filter by specific sport
+    if sport_id and sport_id.isdigit():
+        sport_id_int = int(sport_id)
+        coaches = coaches.filter(sport_id=sport_id_int)
+    else:
+        sport_id = ''
     
-    # Get all sports for filter dropdown
-    sports = Sport.objects.all()
+    # Show ALL available sports in the filter dropdown
+    all_sports = Sport.objects.all()
     
     # Get existing requests and active coaches
     pending_requests = CoachRequest.objects.filter(athlete=user, status='pending').values_list('coach_id', flat=True)
@@ -134,7 +172,8 @@ def find_coaches(request):
     
     context = {
         'coaches': coaches,
-        'sports': sports,
+        'all_sports': all_sports,
+        'athlete_sports': athlete_sport_ids,
         'selected_sport': sport_id,
         'requested_coach_ids': requested_coach_ids,
         'active_coach_ids': active_coach_ids,
@@ -149,18 +188,22 @@ def request_coach(request, coach_id):
     from user.models import CoachProfile
     
     if request.method == 'POST':
-        coach_profile = get_object_or_404(CoachProfile, id=coach_id)
+        coach_profile = get_object_or_404(CoachProfile.objects.select_related('user', 'sport'), id=coach_id)
         coach = coach_profile.user
-        
-        # Get the first sport the athlete has selected, or any sport
-        athlete_sport = AthleteSport.objects.filter(athlete=request.user).first()
-        if athlete_sport:
-            sport = athlete_sport.sport
-        else:
-            sport = Sport.objects.first()
-        
-        if not sport:
-            messages.error(request, 'No sports available. Please select a sport first.')
+
+        if not coach_profile.sport:
+            messages.error(request, 'This coach has no sport assigned yet.')
+            return redirect('player:select_sports')
+
+        sport = coach_profile.sport
+
+        athlete_has_sport = AthleteSport.objects.filter(
+            athlete=request.user,
+            sport=sport
+        ).exists()
+
+        if not athlete_has_sport:
+            messages.error(request, f'You can only request coaches for your selected sports. Please add {sport.name} first.')
             return redirect('player:select_sports')
         
         # Check if request already exists
@@ -220,6 +263,19 @@ def my_coaches(request):
 
 @login_required
 @athlete_required
+def coaching_history(request):
+    """Show the athlete's coach history with start date and duration."""
+    user = request.user
+    coaching_history = AthleteCoach.objects.filter(athlete=user).select_related('coach', 'sport').order_by('-start_date', '-id')
+
+    context = {
+        'coaching_history': coaching_history,
+    }
+    return render(request, 'player/coaching_history.html', context)
+
+
+@login_required
+@athlete_required
 def daily_routine(request):
     """View daily routine set by coach"""
     user = request.user
@@ -251,4 +307,20 @@ def routine_detail(request, routine_id):
         'routine': routine,
     }
     return render(request, 'player/routine_detail.html', context)
+
+
+@login_required
+@athlete_required
+def player_performance(request):
+    """Show a full performance chart for the athlete based on routines."""
+    user = request.user
+    routines = DailyRoutine.objects.filter(athlete=user)
+    performance_data = build_routine_performance_data(routines)
+
+    context = {
+        'user': user,
+        **performance_data,
+    }
+    return render(request, 'player/performance.html', context)
+
 
