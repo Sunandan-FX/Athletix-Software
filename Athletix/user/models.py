@@ -66,7 +66,7 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self):
         return f"{self.name} ({self.email}) - {self.get_role_display()}"
-     @property
+    @property
     def health_record_count(self):
         return self.health_records.count()
 
