@@ -39,6 +39,7 @@ class AthleteHealthRecord(models.Model):
     recovery_status = models.CharField(max_length=20, choices=RECOVERY_STATUS_CHOICES, default='good')
     performance_notes = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    review_requested = models.BooleanField(default=False, help_text='Player requested medical review')
 
     class Meta:
         db_table = 'athlete_health_record'
